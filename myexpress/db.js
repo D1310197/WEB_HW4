@@ -1,4 +1,4 @@
-import sqlite3 from 'sqlite3';
+import Database from 'better-sqlite3';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
@@ -10,17 +10,26 @@ const dbPath = process.env.RENDER_DISK_PATH
     ? path.join(process.env.RENDER_DISK_PATH, 'database.sqlite')
     : path.resolve(__dirname, 'database.sqlite');
 
-const db = new sqlite3.Database(dbPath, (err) => {
-    if (err) {
-        console.error('Error opening database:', err.message);
-    } else {
-        console.log('Connected to the SQLite database.');
-        initializeDatabase();
-    }
-});
+const db = new Database(dbPath, { verbose: console.log });
+console.log('Connected to the SQLite database.');
+
+// better-sqlite3 is synchronous, so we can initialize directly
+initializeDatabase();
 
 function initializeDatabase() {
-    db.serialize(() => {
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS products (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            price REAL NOT NULL,
+            category TEXT,
+            lastUpdated DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+        -- Add other table schemas here if needed
+    `);
+}
+
+export default db;
         // Products Table
         db.run(`CREATE TABLE IF NOT EXISTS Products (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
