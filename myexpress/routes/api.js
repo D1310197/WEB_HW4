@@ -25,11 +25,14 @@ router.get('/search', (req, res) => {
  * 獲取歷史價格清單
  */
 router.get('/:id/history', (req, res) => {
+    console.log(`Fetching history for product ID: ${req.params.id}`);
     const sql = `SELECT * FROM Price_History WHERE product_id = ? ORDER BY recorded_at ASC`;
     try {
         const rows = db.prepare(sql).all(req.params.id);
+        console.log(`Found ${rows.length} history records`);
         res.json(rows);
     } catch (err) {
+        console.error('Database error:', err.message);
         res.status(500).json({ error: err.message });
     }
 });

@@ -49,10 +49,16 @@
             };
 
             const selectProduct = async (p) => {
+                console.log('Selecting product:', p);
                 setSelectedProduct(p);
-                const res = await fetch(`/api/products/${p.id}/history`);
-                const data = await res.json();
-                setHistory(data);
+                try {
+                    const res = await fetch(`/api/products/${p.id}/history`);
+                    const data = await res.json();
+                    console.log('History data received:', data);
+                    setHistory(data);
+                } catch (err) {
+                    console.error('Error fetching history:', err);
+                }
             };
 
             const handleSubmit = async (e) => {
