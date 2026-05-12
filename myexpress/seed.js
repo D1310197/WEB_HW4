@@ -1,4 +1,10 @@
 import db from './db.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const products = [
     { item_code: '422992', model_group_id: 'u-crew-t', category: 'T-Shirt', name: 'UNIQLO U 系列圓領 T 恤 (短袖)' },
@@ -29,12 +35,34 @@ const seedData = () => {
         const transaction = db.transaction(() => {
             for (const p of products) {
                 insertProduct.run(p.item_code, p.model_group_id, p.category, p.name);
-                console.log(`Initialized product frame: ${p.item_code}`);
+            }
+
+            // Import local data if exists
+            const localDataPath = path.join(__dirname, 'local_data.json');
+            if (fs.existsSync(localDataPath)) {
+                console.log('Detected local data, importing price history...');
+                try {
+                    const localHistory = JSON.parse(fs.readFileSync(localDataPath, 'utf8'));
+                    for (const h of localHistory) {
+                        const product = db.prepare('SELECT id FROM Products WHERE item_code = ?').get(h.item_code);
+                        if (product) {
+                            // Check for duplicates
+                            const exists = db.prepare('SELECT id FROM Price_History WHERE product_id = ? AND recorded_at = ? AND price = ?')
+                                             .get(product.id, h.recorded_at, h.price);
+                            if (!exists) {
+                                insertHistory.run(product.id, h.price, 'LIST', h.recorded_at, h.change_reason);
+                            }
+                        }
+                    }
+                    console.log(`Successfully migrated ${localHistory.length} local history records.`);
+                } catch (e) {
+                    console.error('Failed to parse local_data.json:', e.message);
+                }
             }
         });
 
         transaction();
-        console.log(`Successfully initialized ${products.length} product frames. Real prices will be fetched by the crawler next.`);
+        console.log(`Successfully initialized product frames. Real prices will be fetched by the crawler next.`);
     } catch (err) {
         console.error('Error seeding data:', err.message);
     }
