@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: web-hw4
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build-db
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: RENDER_DISK_PATH
+        value: /opt/render/project/src/data
+    disk:
+      name: sqlite-data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1
