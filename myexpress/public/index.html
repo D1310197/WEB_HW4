@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UNIQLO Archive: Price | 優衣庫價格檔案館</title>
+    <!-- Use CDN for quick setup -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
+    <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* 自定義捲軸樣式 - UNIQLO 風格 */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #000; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #ff0000; }
+    </style>
+</head>
+<body class="bg-white text-stone-900">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } = Recharts;
+
+        function App() {
+            const [searchQuery, setSearchQuery] = useState('');
+            const [products, setProducts] = useState([]);
+            const [selectedProduct, setSelectedProduct] = useState(null);
+            const [history, setHistory] = useState([]);
+            const [formData, setFormData] = useState({ date: '', name: '', price: '' });
+
+            useEffect(() => {
+                fetchProducts();
+            }, [searchQuery]);
+
+            const fetchProducts = async () => {
+                const res = await fetch(`/api/products/search?q=${searchQuery}`);
+                const data = await res.json();
+                setProducts(data);
+            };
+
+            const selectProduct = async (p) => {
+                setSelectedProduct(p);
+                const res = await fetch(`/api/products/${p.id}/history`);
+                const data = await res.json();
+                setHistory(data);
+            };
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                await fetch('/api/prices', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                setFormData({ date: '', name: '', price: '' });
+                fetchProducts();
+                alert('數據已新增！');
+            };
+
+            return (
+                <div className="min-h-screen">
+                    <div className="bg-[#ff0000] h-1.5 w-full"></div>
+                    
+                    <header className="border-b border-gray-200 py-4 px-6 flex justify-between items-center sticky top-0 bg-white z-10">
+                        <div className="bg-[#ff0000] text-white p-2 font-bold text-xl tracking-tighter leading-none inline-block">
+                            UNIQLO<br/>ARCHIVE: PRICE
+                        </div>
+                        <h1 className="text-lg font-bold hidden md:block uppercase tracking-tighter">優衣庫價格檔案館</h1>
+                    </header>
+
+                    <main className="max-w-6xl mx-auto p-4 md:p-8">
+                        {/* 搜尋與新增區塊 */}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+                            <div className="lg:col-span-2">
+                                <label className="block text-xs font-bold uppercase tracking-widest mb-2">Search Products</label>
+                                <div className="border-2 border-black p-1 flex">
+                                    <input 
+                                        type="text" 
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        placeholder="輸入商品名稱或編號" 
+                                        className="flex-1 p-3 outline-none uppercase"
+                                    />
+                                </div>
+                                
+                                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                                    {products.map(p => (
+                                        <div 
+                                            key={p.id} 
+                                            onClick={() => selectProduct(p)}
+                                            className={`border p-4 cursor-pointer hover:border-black transition ${selectedProduct && selectedProduct.id === p.id ? 'border-2 border-black' : 'border-gray-200'}`}
+                                        >
+                                            <p className="font-bold">{p.name || `商品 #${p.item_code}`}</p>
+                                            <p className="text-sm text-gray-500">#{p.item_code}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <aside className="bg-gray-50 p-6 border-t-4 border-black">
+                                <h3 className="font-bold mb-4 uppercase tracking-widest">新增物價資料</h3>
+                                <form onSubmit={handleSubmit} className="space-y-4">
+                                    <input 
+                                        type="text" required placeholder="商品名稱"
+                                        value={formData.name}
+                                        onChange={e => setFormData({...formData, name: e.target.value})}
+                                        className="w-full p-2 border border-gray-300 outline-none focus:border-black" 
+                                    />
+                                    <input 
+                                        type="date" required 
+                                        value={formData.date}
+                                        onChange={e => setFormData({...formData, date: e.target.value})}
+                                        className="w-full p-2 border border-gray-300 outline-none focus:border-black" 
+                                    />
+                                    <input 
+                                        type="number" required placeholder="價格 (TWD)"
+                                        value={formData.price}
+                                        onChange={e => setFormData({...formData, price: e.target.value})}
+                                        className="w-full p-2 border border-gray-300 outline-none focus:border-black" 
+                                    />
+                                    <button className="w-full bg-black text-white p-3 font-bold uppercase hover:bg-gray-800 tracking-widest transition">
+                                        Submit
+                                    </button>
+                                </form>
+                            </aside>
+                        </div>
+
+                        {selectedProduct && (
+                            <div className="animate-fade-in">
+                                <div className="border-b-4 border-black pb-2 mb-8 flex justify-between items-end">
+                                    <h2 className="text-3xl font-bold uppercase">{selectedProduct.name}</h2>
+                                    <span className="text-sm font-bold text-gray-500 tracking-widest px-4">HISTORY DATA</span>
+                                </div>
+
+                                <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
+                                    {/* 折線圖 */}
+                                    <div className="bg-white border p-6 h-[400px]">
+                                        <h3 className="font-bold mb-6 flex justify-between">
+                                            <span>PRICE TREND</span>
+                                            <span className="text-[#ff0000]">TWD</span>
+                                        </h3>
+                                        <ResponsiveContainer width="100%" height="90%">
+                                            <LineChart data={history.map(h => ({ d: h.recorded_at, p: h.price }))}>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                                <XAxis dataKey="d" axisLine={false} tickLine={false} />
+                                                <YAxis axisLine={false} tickLine={false} domain={['auto', 'auto']} />
+                                                <Tooltip contentStyle={{ border: '2px solid black', borderRadius: '0' }} />
+                                                <Line 
+                                                    type="stepAfter" 
+                                                    dataKey="p" 
+                                                    stroke="#ff0000" 
+                                                    strokeWidth={4} 
+                                                    dot={{ r: 6, fill: '#ff0000', strokeWidth: 0 }} 
+                                                />
+                                            </LineChart>
+                                        </ResponsiveContainer>
+                                    </div>
+
+                                    {/* 表格 */}
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left border-collapse">
+                                            <thead>
+                                                <tr className="border-b-2 border-black">
+                                                    <th className="py-2 uppercase text-xs font-bold tracking-widest">Date</th>
+                                                    <th className="py-2 uppercase text-xs font-bold tracking-widest">Price</th>
+                                                    <th className="py-2 uppercase text-xs font-bold tracking-widest">Change Reason</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="text-sm">
+                                                {history.map(h => (
+                                                    <tr key={h.id} className="border-b hover:bg-gray-50">
+                                                        <td className="py-4 whitespace-nowrap">{h.recorded_at}</td>
+                                                        <td className="py-4 font-bold text-lg">${h.price}</td>
+                                                        <td className="py-4 text-gray-500 italic">{h.change_reason || '-'}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
