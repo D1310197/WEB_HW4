@@ -1,4 +1,4 @@
-import sqlite3 from 'sqlite3';
+import Database from 'better-sqlite3';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
@@ -10,40 +10,34 @@ const dbPath = process.env.RENDER_DISK_PATH
     ? path.join(process.env.RENDER_DISK_PATH, 'database.sqlite')
     : path.resolve(__dirname, 'database.sqlite');
 
-const db = new sqlite3.Database(dbPath, (err) => {
-    if (err) {
-        console.error('Error opening database:', err.message);
-    } else {
-        console.log('Connected to the SQLite database.');
-        initializeDatabase();
-    }
-});
+const db = new Database(dbPath, { verbose: console.log });
+console.log('Connected to the SQLite database.');
+
+initializeDatabase();
 
 function initializeDatabase() {
-    db.serialize(() => {
-        // Products Table
-        db.run(`CREATE TABLE IF NOT EXISTS Products (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            model_group_id TEXT,
-            item_code TEXT NOT NULL UNIQUE,
-            name TEXT,
-            category TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`);
+    // Products Table
+    db.exec(`CREATE TABLE IF NOT EXISTS Products (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        model_group_id TEXT,
+        item_code TEXT NOT NULL UNIQUE,
+        name TEXT,
+        category TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
 
-        // Price_History Table
-        db.run(`CREATE TABLE IF NOT EXISTS Price_History (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            product_id INTEGER NOT NULL,
-            price INTEGER NOT NULL,
-            price_type TEXT CHECK(price_type IN ('LIST', 'SALE')),
-            recorded_at DATE NOT NULL,
-            change_reason TEXT,
-            FOREIGN KEY (product_id) REFERENCES Products(id)
-        )`);
+    // Price_History Table
+    db.exec(`CREATE TABLE IF NOT EXISTS Price_History (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        product_id INTEGER NOT NULL,
+        price INTEGER NOT NULL,
+        price_type TEXT CHECK(price_type IN ('LIST', 'SALE')),
+        recorded_at DATE NOT NULL,
+        change_reason TEXT,
+        FOREIGN KEY (product_id) REFERENCES Products(id)
+    )`);
 
-        console.log('Database tables initialized.');
-    });
+    console.log('Database tables initialized.');
 }
 
 export default db;
