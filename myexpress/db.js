@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -9,6 +10,9 @@ const __dirname = path.dirname(__filename);
 const dbPath = process.env.RENDER_DISK_PATH 
     ? path.join(process.env.RENDER_DISK_PATH, 'database.sqlite')
     : path.resolve(__dirname, 'database.sqlite');
+
+// Ensure target folder exists before opening SQLite file.
+fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 
 const db = new Database(dbPath, { verbose: console.log });
 console.log('Connected to the SQLite database.');
