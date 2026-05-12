@@ -29,21 +29,12 @@ const seedData = () => {
         const transaction = db.transaction(() => {
             for (const p of products) {
                 insertProduct.run(p.item_code, p.model_group_id, p.category, p.name);
-                
-                // Get the ID (either just inserted or already existed)
-                const product = db.prepare('SELECT id FROM Products WHERE item_code = ?').get(p.item_code);
-                const productId = product.id;
-
-                // Add a default price history for each to make the chart not empty
-                const checkHistory = db.prepare('SELECT id FROM Price_History WHERE product_id = ?').get(productId);
-                if (!checkHistory) {
-                    insertHistory.run(productId, 590, 'LIST', '2024-01-01', '初始種子資料');
-                }
+                console.log(`Initialized product frame: ${p.item_code}`);
             }
         });
 
         transaction();
-        console.log(`Successfully seeded ${products.length} products.`);
+        console.log(`Successfully initialized ${products.length} product frames. Real prices will be fetched by the crawler next.`);
     } catch (err) {
         console.error('Error seeding data:', err.message);
     }
