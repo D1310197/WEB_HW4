@@ -8,6 +8,7 @@
     "build-db": "node seed.js"
   },
   "dependencies": {
+    "better-sqlite3": "^12.10.0",
     "cookie-parser": "~1.4.4",
     "debug": "~2.6.9",
     "express": "~4.16.1",
@@ -15,7 +16,6 @@
     "morgan": "~1.9.1",
     "node-cron": "^4.2.1",
     "puppeteer": "^24.43.0",
-    "recharts": "^3.8.1",
-    "sqlite3": "^6.0.1"
+    "recharts": "^3.8.1"
   }
 }
