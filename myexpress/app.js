@@ -26,6 +26,8 @@ app.use('/api/products', apiRouter);
 app.use('/api', apiRouter); // For /api/prices
 
 // 啟動排程器
-setupScheduler();
+if (process.env.NODE_ENV === 'production' || process.env.ENABLE_SCHEDULER === 'true') {
+    setupScheduler();
+}
 
 export default app;

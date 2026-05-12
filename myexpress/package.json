@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "start": "node ./bin/www",
-    "build-db": "node seed.js"
+    "build-db": "node seed.js",
+    "force-crawl": "node force-crawl.js",
+    "crawl": "node -e \"import('./crawler.js').then(m => m.updateProductPrices())\""
   },
   "dependencies": {
     "better-sqlite3": "^12.10.0",
