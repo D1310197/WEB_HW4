@@ -18,16 +18,25 @@ export async function crawlPrice(itemCode) {
     const page = await browser.newPage();
     try {
         const url = `https://www.uniqlo.com/tw/zh_TW/product.html?itemCode=${itemCode}`;
-        await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36');
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+        
+        // Wait for price element to appear if it's dynamic
+        try {
+            await page.waitForSelector('.price-limited, .pdp-price', { timeout: 10000 });
+        } catch (e) {
+            console.log(`Timeout waiting for price selector for ${itemCode}`);
+        }
 
         // UNIQLO TW uses specific classes for price. 
         // Note: These selectors may need updates based on actual site structure.
         const priceData = await page.evaluate(() => {
-            const listPriceEl = document.querySelector('.price-limited');
-            const nameEl = document.querySelector('.pdp-title');
+            const listPriceEl = document.querySelector('.price-limited, .pdp-price');
+            const nameEl = document.querySelector('.pdp-title, h1');
             
+            const rawPrice = listPriceEl ? listPriceEl.innerText.replace(/[^0-9]/g, '') : null;
             return {
-                price: listPriceEl ? parseInt(listPriceEl.innerText.replace(/[^0-9]/g, '')) : null,
+                price: rawPrice ? parseInt(rawPrice) : null,
                 name: nameEl ? nameEl.innerText.trim() : null
             };
         });

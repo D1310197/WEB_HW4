@@ -3,8 +3,8 @@ services:
     name: web-hw4
     env: node
     plan: free
-    buildCommand: npm install && npm run build-db && npm run crawl
-    startCommand: npm start
+    buildCommand: npm install && npm run build-db
+    startCommand: npm run crawl && npm start
     envVars:
       - key: NODE_VERSION
         value: 18
